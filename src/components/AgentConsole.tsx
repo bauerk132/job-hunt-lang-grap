@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { JobOpportunity, AgentExecutionStep, CandidateProfile } from "../types";
 import { SalaryCompensationTrendChart } from "./SalaryCompensationTrendChart";
+import { DailyGoalsWidget } from "./DailyGoalsWidget";
 import { ThemeId, THEMES } from "../types/theme";
 
 export function parseSalaryRange(salaryStr?: string): { min: number; max: number; average: number } | null {
@@ -194,13 +195,13 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-pink-500/10 rounded-full blur-xl pointer-events-none" />
-          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Cosmos DB Logs</span>
+          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
+          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Local Store Logs</span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-xl sm:text-2xl font-bold text-pink-400 font-mono">{steps.length + 8}</span>
-            <span className="text-[10px] text-pink-300">Docs Written</span>
+            <span className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono">{steps.length + 8}</span>
+            <span className="text-[10px] text-emerald-300 font-semibold">$0.00 / Free</span>
           </div>
-          <p className="text-[10px] text-slate-500 mt-1">Partitioned JSON</p>
+          <p className="text-[10px] text-slate-500 mt-1">LocalStorage Key-Value</p>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
@@ -213,6 +214,16 @@ export const AgentConsole: React.FC<AgentConsoleProps> = ({
           <p className="text-[10px] text-slate-500 mt-1">Purged from queue</p>
         </div>
       </div>
+
+      {/* Daily Application Goal & Quota Tracker Widget */}
+      <DailyGoalsWidget
+        jobs={jobs}
+        onRunCycle={onRunCycle}
+        onExecuteBatchApply={onExecuteBatchApply}
+        qualifiedBatchJobsCount={qualifiedBatchJobs.length}
+        isRunning={isRunning}
+        activeThemeId={activeThemeId}
+      />
 
       {/* Control Banner & Active Search Policy */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden shadow-lg">

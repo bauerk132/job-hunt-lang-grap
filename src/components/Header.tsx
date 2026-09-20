@@ -237,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
           { id: "stretch", label: "Stretch Application Matrix", icon: Rocket, badge: "Aspirational" },
           { id: "feedback", label: "Feedback Loop & Queries", icon: RotateCw, badge: `Gen ${currentIteration}` },
           { id: "rejections", label: "Rejection Classifier", icon: Activity },
-          { id: "cosmos", label: "Azure Cosmos DB", icon: Database, badge: "NoSQL" },
+          { id: "cosmos", label: "Free Local Storage & DB", icon: Database, badge: "100% Free" },
           { id: "code", label: "Agent Code & Azure Bicep", icon: Code2, badge: "Python" },
         ].map((tab) => {
           const Icon = tab.icon;

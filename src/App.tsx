@@ -4,7 +4,7 @@ import { Header } from "./components/Header";
 import { AgentConsole } from "./components/AgentConsole";
 import { FeedbackLoopView } from "./components/FeedbackLoopView";
 import { RejectionAnalyzer } from "./components/RejectionAnalyzer";
-import { CosmosDbExplorer } from "./components/CosmosDbExplorer";
+import { LocalStorageExplorer, StorageEngineMode } from "./components/LocalStorageExplorer";
 import { AzureDeploymentHub } from "./components/AzureDeploymentHub";
 import { CandidateProfileModal } from "./components/CandidateProfileModal";
 import { StretchAnalysisView } from "./components/StretchAnalysisView";
@@ -46,6 +46,22 @@ export default function App() {
   const [activePlatforms, setActivePlatforms] = useState({ linkedin: true, indeed: true });
   const [lastBackupTimestamp, setLastBackupTimestamp] = useState<string | null>(null);
   const [totalProfileBackups, setTotalProfileBackups] = useState<number>(0);
+  const [storageMode, setStorageMode] = useState<StorageEngineMode>(() => {
+    try {
+      const saved = localStorage.getItem("job_agent_storage_mode") as StorageEngineMode;
+      if (saved && (saved === "LOCAL_STORAGE" || saved === "INDEXED_DB" || saved === "IN_MEMORY_FREE")) {
+        return saved;
+      }
+    } catch (_) {}
+    return "LOCAL_STORAGE";
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("job_agent_storage_mode", storageMode);
+    } catch (_) {}
+  }, [storageMode]);
+
   const [activeThemeId, setActiveThemeId] = useState<ThemeId>(() => {
     try {
       const saved = localStorage.getItem("job_agent_theme_id") as ThemeId;
@@ -83,13 +99,31 @@ export default function App() {
   const currentIterationObj = iterations[iterations.length - 1] || iterations[0];
   const currentQuery = currentIterationObj.query;
 
-  // Load initial Cosmos DB documents from backend
+  // Load initial documents from browser LocalStorage with server seed fallback
   const fetchCosmosDocs = async () => {
     try {
+      const localStored = localStorage.getItem("job_agent_documents_v2");
+      if (localStored) {
+        const parsed = JSON.parse(localStored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCosmosDocs(parsed);
+          const backups = parsed.filter((d: CosmosDocument) => d.type === "candidate_profile_backup");
+          setTotalProfileBackups(backups.length);
+          if (backups.length > 0) {
+            setLastBackupTimestamp(new Date(backups[0].timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+          }
+          return;
+        }
+      }
+
+      // Initial seed from server (zero cost)
       const res = await fetch("/api/cosmos/documents");
       if (res.ok) {
         const data = await res.json();
         setCosmosDocs(data);
+        try {
+          localStorage.setItem("job_agent_documents_v2", JSON.stringify(data));
+        } catch (_) {}
         const backups = data.filter((d: CosmosDocument) => d.type === "candidate_profile_backup");
         setTotalProfileBackups(backups.length);
         if (backups.length > 0) {
@@ -97,7 +131,7 @@ export default function App() {
         }
       }
     } catch (e) {
-      console.warn("Could not fetch Cosmos documents from server:", e);
+      console.warn("Could not fetch documents from local store or server:", e);
     }
   };
 
@@ -116,10 +150,28 @@ export default function App() {
     return newStep;
   };
 
-  // Helper to log document to server Cosmos DB
+  // Helper to log document to zero-cost local storage (and mirror to state)
   const logToCosmos = async (type: CosmosDocument["type"], data: Record<string, any>) => {
+    const newDoc: CosmosDocument = {
+      id: `doc-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      partitionKey: candidateProfile.email,
+      type,
+      timestamp: new Date().toISOString(),
+      data,
+      ruCost: 0.0,
+      _ts: Math.floor(Date.now() / 1000),
+    };
+
+    setCosmosDocs((prev) => {
+      const updated = [newDoc, ...prev];
+      try {
+        localStorage.setItem("job_agent_documents_v2", JSON.stringify(updated.slice(0, 80)));
+      } catch (_) {}
+      return updated;
+    });
+
     try {
-      const res = await fetch("/api/cosmos/log", {
+      fetch("/api/cosmos/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -127,19 +179,11 @@ export default function App() {
           type,
           data,
         }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.document) {
-          setCosmosDocs((prev) => [json.document, ...prev]);
-        }
-      }
-    } catch (e) {
-      console.warn("Error logging to Cosmos DB:", e);
-    }
+      }).catch(() => {});
+    } catch (_) {}
   };
 
-  // Automated & Manual Candidate Profile Backup to Cosmos DB
+  // Automated & Manual Candidate Profile Backup to Free Local Storage
   const performProfileBackup = async (
     profileToBackup: CandidateProfile = candidateProfile,
     triggerSource: "SCHEDULED_AUTOMATION" | "MANUAL_TRIGGER" | "PROFILE_UPDATE" = "MANUAL_TRIGGER"
@@ -151,10 +195,10 @@ export default function App() {
     // Step in console telemetry
     addStep({
       phase: "COSMOS_TELEMETRY",
-      title: `Cosmos DB Snapshot: Candidate Profile`,
-      detail: `Persisted snapshot of ${profileToBackup.name} (${profileToBackup.role}) to Cosmos DB container 'telemetry_logs' via /partitionKey (${profileToBackup.email}) [Trigger: ${triggerSource}]`,
+      title: `Free Local Store Snapshot: Candidate Profile`,
+      detail: `Persisted snapshot of ${profileToBackup.name} (${profileToBackup.role}) to browser LocalStorage (partition: ${profileToBackup.email}) [Cost: $0.00 / Free] [Trigger: ${triggerSource}]`,
       status: "success",
-      platform: "CosmosDB",
+      platform: "Azure",
       metadata: {
         backupId,
         skillsTracked: profileToBackup.skills.length,
@@ -1016,10 +1060,19 @@ export default function App() {
         )}
 
         {activeTab === "cosmos" && (
-          <CosmosDbExplorer
+          <LocalStorageExplorer
             documents={cosmosDocs}
             onRefresh={fetchCosmosDocs}
+            storageMode={storageMode}
+            onToggleStorageMode={setStorageMode}
             onTriggerBackup={() => performProfileBackup(candidateProfile, "MANUAL_TRIGGER")}
+            onClearLocalStorage={() => {
+              try {
+                localStorage.removeItem("job_agent_documents_v2");
+                setCosmosDocs([]);
+                setTotalProfileBackups(0);
+              } catch (_) {}
+            }}
             backupStatus={{
               enabled: true,
               intervalMinutes: 5,
@@ -1083,7 +1136,7 @@ export default function App() {
               <span>Switch Theme ({currentTheme.name})</span>
             </button>
             <span className="text-slate-600">|</span>
-            <span>Serverless RU Billing: ~3.4 RU/query</span>
+            <span className="text-emerald-400 font-semibold">Zero-Cost Storage: LocalStorage ($0.00 / mo)</span>
             <span className="text-slate-600">|</span>
             <span>State: LangGraph Memory Checkpointed</span>
           </div>

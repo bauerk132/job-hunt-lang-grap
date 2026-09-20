@@ -198,23 +198,23 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
             />
           </div>
 
-          {/* Cosmos DB Automated Persistence Banner & Manual Backup */}
-          <div className="p-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-indigo-950/30 to-slate-950 border border-indigo-500/30 text-slate-300 space-y-2">
+          {/* Free Local Storage Automated Persistence Banner & Manual Backup */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-emerald-950/30 to-slate-950 border border-emerald-500/30 text-slate-300 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-indigo-400" />
-                <span className="font-semibold text-white">Cosmos DB Autonomous Profile Persistence</span>
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span className="font-semibold text-white">Free Local Storage & ATS Profile Persistence</span>
               </div>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                SCHEDULED (EVERY 15M)
+                100% FREE (LOCALSTORAGE)
               </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Snapshots of this profile and its ATS configurations are autonomously written to Cosmos DB (partition: <code className="text-sky-300">{formData.email}</code>). In the event of an Azure Container App restart, crash, or scale-to-zero event, state is recovered without data loss.
+              Snapshots of this profile and its ATS configurations are stored locally in your browser's persistent LocalStorage (partition key: <code className="text-emerald-300">{formData.email}</code>). Completely free with zero Cosmos DB cloud RU bills or external database costs.
             </p>
             <div className="flex items-center justify-between pt-1 text-[11px]">
               <span className="text-slate-500">
-                Last Cosmos Backup: <strong className="text-indigo-300 font-mono">{lastBackupTimestamp || "Just now"}</strong>
+                Last Local Backup: <strong className="text-emerald-300 font-mono">{lastBackupTimestamp || "Just now"}</strong>
               </span>
               {onSnapshotToCosmos && (
                 <button
@@ -224,12 +224,12 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
                     setSnapshotSuccess(true);
                     setTimeout(() => setSnapshotSuccess(false), 2500);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-300 hover:text-white font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 hover:text-white font-medium transition-colors"
                 >
                   {snapshotSuccess ? (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-300">Backup Saved!</span>
+                      <span className="text-emerald-300">Saved to LocalStorage!</span>
                     </>
                   ) : (
                     <>

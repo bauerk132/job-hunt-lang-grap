@@ -1,6 +1,6 @@
 {
   "name": "Autonomous Job Agent: LangChain on Azure",
-  "description": "Automated LangChain agent applying to LinkedIn and Indeed, learning from rejection patterns via feedback loop query iteration, hosted on Azure with Cosmos DB telemetry.",
+  "description": "Automated LangChain agent applying to LinkedIn and Indeed, learning from rejection patterns via feedback loop query iteration, with free client-side local storage & snapshot recovery.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
